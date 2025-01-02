@@ -1,6 +1,5 @@
 ---
 title: "The start of a journey"
-description: After 20+ years working in IT and in SaaS, I've decided to create my own blog. Why you may ask? Well, I've always loved sharing information with others and especially my team members, but I've decided to broaden that now and share my knowledge with the world. I'll use this platform to share information that I've learned while working on various projects, currently learning Hugo and Fleet Device Management. But with over 5 years in Cellular Engineering, 8 Years in Systems Adminsitration, and over 8 years in Mobile Device Management and SaaS, I'm sure there is something we share in common.
 date: 2025-01-01T23:19:06Z
 image: cover.jpg
 categories:
