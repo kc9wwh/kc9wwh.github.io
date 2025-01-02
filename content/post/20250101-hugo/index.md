@@ -2,7 +2,7 @@
 title: "Starting my journey with Hugo"
 description: "Sharing insights on using Hugo to kickstart my blogging journey."
 date: 2025-01-01T23:33:38Z
-image: 
+image: cover.jpg
 categories: [Tech]
 tags: [Hugo, Static Sites, Tech Blogging, Open Source]
 hidden: false
@@ -36,3 +36,5 @@ With over 20 years of experience in IT and SaaS, I've worked with countless plat
 In future posts, I plan to dive deeper into technical topics, share insights from my years in the industry, and provide tips and tutorials for fellow tech enthusiasts. My goal is to create a resource that others can learn from and build upon.
 
 If you're considering starting a blog or experimenting with static site generators, I highly recommend giving Hugo a try. Stay tuned for more updates, and feel free to reach out with any questions or suggestions. Let's build something great together!
+
+> Photo by [Thomas Jensen](https://unsplash.com/@thomasjsn?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash) on [Unsplash]https://unsplash.com)
