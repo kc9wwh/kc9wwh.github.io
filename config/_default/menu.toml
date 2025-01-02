@@ -22,3 +22,12 @@ url = "https://www.linkedin.com/in/jroskos/"
 
 [social.params]
 icon = "brand-linkedin"
+
+
+[[social]]
+identifier = "contact-me"
+name = "Contact me"
+url = "mailto:josh@kc9wwh.net?subject=Blog Contact Request"
+
+[social.params]
+icon = "message-chatbot"
