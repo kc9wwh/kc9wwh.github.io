@@ -8,8 +8,6 @@ menu:
 
 comments: false
 ---
-{{< figure src="/cover.jpg" title="Passion led us here" alt="Passion led us here" width="300" >}}
-
 Welcome to my blog!
 
 As a seasoned Customer Success Manager with over 8 years of experience in enterprise solutions and SaaS, I am driven by a passion for helping clients achieve exceptional outcomes. My journey in the tech industry has been anything but conventional, and that’s what makes it so exciting. With a career spanning diverse roles and industries, I’ve cultivated a unique perspective that allows me to bridge the gap between technology and human connection.
@@ -24,3 +22,5 @@ Through every chapter of my career and life, one thing has remained constant: my
 
 Thanks for stopping by—I’m thrilled to have you here. Let’s connect, collaborate, and share ideas to drive success together!
 
+![Passion Led Us Here](cover.jpg)
+> Photo by [Ian Schneider](https://unsplash.com/@goian?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash) on [Unsplash](https://unsplash.com/photos/two-person-standing-on-gray-tile-paving-TamMbr4okv4?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash)
