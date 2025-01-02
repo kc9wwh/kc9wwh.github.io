@@ -8,7 +8,7 @@ menu:
 
 comments: false
 ---
-![Passion Led Us Here](cover.jpg)
+{{< figure src="/cover.jpg" title="Passion led us here" alt="Passion led us here" width="300" >}}
 
 Welcome to my blog!
 
@@ -23,3 +23,4 @@ But my story doesn’t end there. Outside the professional realm, I’ve always 
 Through every chapter of my career and life, one thing has remained constant: my enthusiasm for learning, connecting, and making a meaningful impact. Whether it’s optimizing SaaS adoption strategies, mentoring teams, or diving into the latest tech trends, I’m passionate about building solutions that empower people and businesses to thrive.
 
 Thanks for stopping by—I’m thrilled to have you here. Let’s connect, collaborate, and share ideas to drive success together!
+
