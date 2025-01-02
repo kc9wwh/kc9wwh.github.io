@@ -12,7 +12,6 @@ tags:
 hidden: false
 comments: true
 draft: false
-weight: 1
 ---
 
 Hello! 👋
