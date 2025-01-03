@@ -37,4 +37,4 @@ In future posts, I plan to dive deeper into technical topics, share insights fro
 
 If you're considering starting a blog or experimenting with static site generators, I highly recommend giving Hugo a try. Stay tuned for more updates, and feel free to reach out with any questions or suggestions. Let's build something great together!
 
-> Photo by [Thomas Jensen](https://unsplash.com/@thomasjsn?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash) on [Unsplash]https://unsplash.com)
+> Photo by [Thomas Jensen](https://unsplash.com/@thomasjsn?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash) on [Unsplash](https://unsplash.com)
