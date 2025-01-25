@@ -2,7 +2,7 @@
 title: "The First Issue with Starting a Blog..."
 description: "Is that you don't just have to make time to do the projects, but also to write about them!"
 date: 2025-01-24T16:10:38-06:00
-image: 
+image: cover.jpg 
 categories: [Tech]
 tags: [Windows, Entra ID, Intune]
 hidden: false
@@ -36,4 +36,6 @@ Anyway, on Monday its back to testing and improving the build process for when w
 Till Next Time!
 
 Josh 🖖
+
+> Photo by [Jerry Kavan](https://unsplash.com/@jerrykavan?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash) on [Unsplash](https://unsplash.com)
  
