@@ -4,7 +4,7 @@ description: "Why putting off those db migration warnings is a bad idea.."
 date: 2025-01-26T08:33:38Z
 image: cover.jpg
 categories: [Tech]
-tags: [Fleet, Open Source, MySQL]
+tags: [Fleet, Docker, Open Source, MySQL]
 hidden: false
 comments: true
 draft: false
