@@ -9,15 +9,15 @@ hidden: false
 comments: true
 draft: false
 ---
-About a month ago I setup [Fleet Device Management](https://fleetdm.com) and since then there have been a couple updates that of come out and along with that some required database migrations or updates that need to happen. Unlike with other MDM's I've used in the past, the migrations that need to happen on the database do not auto apply when an upgraded version is ran against it. Instead, you need to manually complete them. 
+About a month ago I setup [Fleet Device Management](https://fleetdm.com) and since then there have been a couple updates that have come out and along with that some required database migrations or updates that needed to happen. Unlike with other MDM's I've used in the past, the migrations that needed to happen on the database do not auto apply when an upgraded version is ran against it. Instead, you need to manually complete them. 
 
-Now I've see these warning for a couple weeks, but kept putting them off. Until today at least, as after updating my fleetdm/fleet docker container to the latest version, Fleet would no longer startup. *ruh-roh!*
+Now I've see these warning for a couple of weeks, but kept putting them off. Until today at least, as after updating my fleetdm/fleet docker container to the latest version, Fleet would no longer startup. *ruh-roh!*
 
-What the first thing we do when a server doesn't boot, we try again...only, that didn't work.
+What is the first thing we do when a server doesn't boot, we try again...only, that didn't work.
 
-Whats the second thing we do? That's right! We check the logs and those logs were all about telling me I really need to do these database migrations. But how since the docker container immediately stops after starting it?
+Whats the second thing we do? That's right! We check the logs, and those logs were all about telling me I really need to do these database migrations. But how since the docker container immediately stops after starting it?
 
-First we need to understand why the container keeps stopping and that is cause unless it is doing something (i.e., a service is actively running on the container), docker, will stop the container to save on resources being wasted. So, how do we overcome this when the container isn't doing what we *want* it to do? We give it something else to do, by having it run tail against `/dev/null`. 
+First we need to understand why the container keeps stopping. That is because unless a docker container is doing something (i.e., a service is actively running on the container), docker, will stop the container to save on resources being wasted. So, how do we overcome this when the container isn't doing what we *want* it to do? We give it something else to do, by having it run tail against `/dev/null`. 
 
 **Normal docker run Command:**
 ```
