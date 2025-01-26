@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Open Source on KC9WWH</title><link>https://kc9wwh.net/tags/open-source/</link><description>Recent content in Open Source on KC9WWH</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Sun, 26 Jan 2025 08:33:38 +0000</lastBuildDate><atom:link href="https://kc9wwh.net/tags/open-source/index.xml" rel="self" type="application/rss+xml"/><item><title>Don't Forget to Apply Updates to your DB</title><link>https://kc9wwh.net/p/dont-forget-to-apply-updates-to-your-db/</link><pubDate>Sun, 26 Jan 2025 08:33:38 +0000</pubDate><guid>https://kc9wwh.net/p/dont-forget-to-apply-updates-to-your-db/</guid><description>&lt;img src="https://kc9wwh.net/p/dont-forget-to-apply-updates-to-your-db/cover.jpg" alt="Featured image of post Don't Forget to Apply Updates to your DB" />&lt;p>About a month ago I setup &lt;a class="link" href="https://fleetdm.com" target="_blank" rel="noopener"
+>Fleet Device Management&lt;/a> and since then there have been a couple updates that have come out and along with that some required database migrations or updates that needed to happen. Unlike with other MDM&amp;rsquo;s I&amp;rsquo;ve used in the past, the migrations that needed to happen on the database do not auto apply when an upgraded version is ran against it. Instead, you need to manually complete them.&lt;/p>
+&lt;p>Now I&amp;rsquo;ve see these warning for a couple of weeks, but kept putting them off. Until today at least, as after updating my fleetdm/fleet docker container to the latest version, Fleet would no longer startup. &lt;em>ruh-roh!&lt;/em>&lt;/p>
+&lt;p>What is the first thing we do when a server doesn&amp;rsquo;t boot, we try again&amp;hellip;only, that didn&amp;rsquo;t work.&lt;/p>
+&lt;p>Whats the second thing we do? That&amp;rsquo;s right! We check the logs, and those logs were all about telling me I really need to do these database migrations. But how since the docker container immediately stops after starting it?&lt;/p>
+&lt;p>First we need to understand why the container keeps stopping. That is because unless a docker container is doing something (i.e., a service is actively running on the container), docker, will stop the container to save on resources being wasted. So, how do we overcome this when the container isn&amp;rsquo;t doing what we &lt;em>want&lt;/em> it to do? We give it something else to do, by having it run tail against &lt;code>/dev/null&lt;/code>.&lt;/p>
+&lt;p>&lt;strong>Normal docker run Command:&lt;/strong>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">docker run
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -d
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> --name=&amp;#39;fleetdm&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> --net=&amp;#39;bridge&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> --pids-limit 2048
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e TZ=&amp;#34;America/Chicago&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e HOST_HOSTNAME=&amp;#34;Loki&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e HOST_CONTAINERNAME=&amp;#34;fleetdm&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MYSQL_ADDRESS&amp;#39;=&amp;#39;10.0.10.82:3306&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MYSQL_DATABASE&amp;#39;=&amp;#39;YOUR_FLEET_DB&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MYSQL_USERNAME&amp;#39;=&amp;#39;YOUR_FLEET_USER&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MYSQL_PASSWORD&amp;#39;=&amp;#39;YOUR_FLEET_PASS&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_REDIS_ADDRESS&amp;#39;=&amp;#39;192.168.50.129:6379&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_SERVER_CERT&amp;#39;=&amp;#39;/mnt/data/certs/certificate.crt&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_SERVER_KEY&amp;#39;=&amp;#39;/mnt/data/certs/private.key&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MDM_WINDOWS_WSTEP_IDENTITY_CERT&amp;#39;=&amp;#39;/mnt/data/win_mdm_certs/fleet-mdm-win-wstep.crt&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MDM_WINDOWS_WSTEP_IDENTITY_KEY&amp;#39;=&amp;#39;/mnt/data/win_mdm_certs/fleet-mdm-win-wstep.key&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_SERVER_PRIVATE_KEY&amp;#39;=&amp;#39;YOUR_SERVER_PRIVATE_KEY&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_LICENSE_KEY&amp;#39;=&amp;#39;YOUR_KEY_HERE&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_OSQUERY_STATUS_LOG_PLUGIN&amp;#39;=&amp;#39;filesystem&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_OSQUERY_RESULT_LOG_PLUGIN&amp;#39;=&amp;#39;filesystem&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_FILESYSTEM_STATUS_LOG_FILE&amp;#39;=&amp;#39;/mnt/data/logs/status.log&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_FILESYSTEM_RESULT_LOG_FILE&amp;#39;=&amp;#39;/mnt/data/logs/result.log&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_FILESYSTEM_AUDIT_LOG_FILE&amp;#39;=&amp;#39;/mnt/data/logs/audit.log&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_FILESYSTEM_ENABLE_LOG_ROTATION&amp;#39;=&amp;#39;true&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_ACTIVITY_ENABLE_AUDIT_LOG&amp;#39;=&amp;#39;true&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_ACTIVITY_AUDIT_LOG_PLUGIN&amp;#39;=&amp;#39;filesystem&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_LOGGING_DEBUG&amp;#39;=&amp;#39;true&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -p &amp;#39;8081:8080/tcp&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -v &amp;#39;/mnt/user/appdata/fleetdm&amp;#39;:&amp;#39;/mnt/data&amp;#39;:&amp;#39;rw&amp;#39; &amp;#39;fleetdm/fleet&amp;#39;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;strong>Normal docker run w/ Tail Command:&lt;/strong>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">docker run
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -d
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> --name=&amp;#39;fleetdm&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> --net=&amp;#39;bridge&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> --pids-limit 2048
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e TZ=&amp;#34;America/Chicago&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e HOST_HOSTNAME=&amp;#34;Loki&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e HOST_CONTAINERNAME=&amp;#34;fleetdm&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MYSQL_ADDRESS&amp;#39;=&amp;#39;10.0.10.82:3306&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MYSQL_DATABASE&amp;#39;=&amp;#39;YOUR_FLEET_DB&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MYSQL_USERNAME&amp;#39;=&amp;#39;YOUR_FLEET_USER&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MYSQL_PASSWORD&amp;#39;=&amp;#39;YOUR_FLEET_PASS&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_REDIS_ADDRESS&amp;#39;=&amp;#39;192.168.50.129:6379&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_SERVER_CERT&amp;#39;=&amp;#39;/mnt/data/certs/certificate.crt&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_SERVER_KEY&amp;#39;=&amp;#39;/mnt/data/certs/private.key&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MDM_WINDOWS_WSTEP_IDENTITY_CERT&amp;#39;=&amp;#39;/mnt/data/win_mdm_certs/fleet-mdm-win-wstep.crt&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MDM_WINDOWS_WSTEP_IDENTITY_KEY&amp;#39;=&amp;#39;/mnt/data/win_mdm_certs/fleet-mdm-win-wstep.key&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_SERVER_PRIVATE_KEY&amp;#39;=&amp;#39;YOUR_SERVER_PRIVATE_KEY&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_LICENSE_KEY&amp;#39;=&amp;#39;YOUR_KEY_HERE&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_OSQUERY_STATUS_LOG_PLUGIN&amp;#39;=&amp;#39;filesystem&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_OSQUERY_RESULT_LOG_PLUGIN&amp;#39;=&amp;#39;filesystem&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_FILESYSTEM_STATUS_LOG_FILE&amp;#39;=&amp;#39;/mnt/data/logs/status.log&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_FILESYSTEM_RESULT_LOG_FILE&amp;#39;=&amp;#39;/mnt/data/logs/result.log&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_FILESYSTEM_AUDIT_LOG_FILE&amp;#39;=&amp;#39;/mnt/data/logs/audit.log&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_FILESYSTEM_ENABLE_LOG_ROTATION&amp;#39;=&amp;#39;true&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_ACTIVITY_ENABLE_AUDIT_LOG&amp;#39;=&amp;#39;true&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_ACTIVITY_AUDIT_LOG_PLUGIN&amp;#39;=&amp;#39;filesystem&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_LOGGING_DEBUG&amp;#39;=&amp;#39;true&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -p &amp;#39;8081:8080/tcp&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -v &amp;#39;/mnt/user/appdata/fleetdm&amp;#39;:&amp;#39;/mnt/data&amp;#39;:&amp;#39;rw&amp;#39; &amp;#39;fleetdm/fleet&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> tail -f /dev/null
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Now that I gave the container something to do, besides starting Fleet since that is immediately stopping, I can now pull up an interactive terminal and perform the database migrations.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">docker exec -it fleetdm fleet prepare db
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>You could also run this as a non-interactive command using &lt;code>docker exec fleetdm fleet prepare db&lt;/code>, but as it was the first time running this for an upgrade, I wanted to be able to walk through it without the terminal session suddenly closing.&lt;/p>
+&lt;p>That was it! Pretty painless once you know what you&amp;rsquo;re doing, but definitely something you need to be aware of when performing upgrades to Fleet and to always check if there are any pending db migrations that need to occur after.&lt;/p>
+&lt;p>Catch ya on the next project!&lt;/p>
+&lt;p>Josh 🖖&lt;/p>
+&lt;blockquote>
+&lt;p>Photo by &lt;a class="link" href="https://unsplash.com/@ffstop?utm_content=creditCopyText&amp;amp;utm_medium=referral&amp;amp;utm_source=unsplash" target="_blank" rel="noopener"
+>Fotis Fotopoulos&lt;/a> on &lt;a class="link" href="https://unsplash.com" target="_blank" rel="noopener"
+>Unsplash&lt;/a>&lt;/p>
+&lt;/blockquote></description></item><item><title>Starting my journey with Hugo</title><link>https://kc9wwh.net/p/starting-my-journey-with-hugo/</link><pubDate>Wed, 01 Jan 2025 23:33:38 +0000</pubDate><guid>https://kc9wwh.net/p/starting-my-journey-with-hugo/</guid><description>&lt;img src="https://kc9wwh.net/p/starting-my-journey-with-hugo/cover.jpg" alt="Featured image of post Starting my journey with Hugo" />&lt;p>I&amp;rsquo;ve been wanting to start my own blog for quite some time, but it wasn&amp;rsquo;t much of a priority in the past. Now, I find myself kicking myself for not doing this sooner! That said, I&amp;rsquo;m thrilled to share that I&amp;rsquo;ve finally spun up my personal blog and look forward to sharing my knowledge with anyone interested.&lt;/p>
+&lt;p>So, why not start out by talking about my journey with &lt;a class="link" href="https://gohugo.io" target="_blank" rel="noopener"
+>Hugo&lt;/a>? If you&amp;rsquo;re not familiar with Hugo, it is one of the leading static website generators out there. It&amp;rsquo;s extremely fast and pretty easy to use. I will admit, however, that the learning curve can be a bit frustrating at first. While all templates use the same framework, they each have their own unique quirks and niche differences.&lt;/p>
+&lt;h3 id="learning-hugo">Learning Hugo
+&lt;/h3>&lt;p>I didn&amp;rsquo;t need to reinvent the wheel to get started with Hugo, and I want to give credit where it&amp;rsquo;s due. Two fantastic videos taught me everything I needed to know to get up and running with Hugo and even take things to the next level:&lt;/p>
+&lt;h4 id="1-luke-smiths-video">1. Luke Smith&amp;rsquo;s Video
+&lt;/h4>&lt;p>The first video that I recommend watching is &lt;a class="link" href="https://youtu.be/ZFL09qhKi5I?si=sqCM8etnmJTTJ8gb" target="_blank" rel="noopener"
+>Hugo Actually Explained (Websites, Themes, Layouts and Intro to Scripting)&lt;/a> by Luke Smith. This video provides a fundamental understanding of Hugo and its data structure. It&amp;rsquo;s an excellent starting point for anyone new to Hugo.&lt;/p>
+&lt;div class="video-wrapper">
+&lt;iframe loading="lazy"
+src="https://www.youtube.com/embed/ZFL09qhKi5I"
+allowfullscreen
+title="YouTube Video"
+>
+&lt;/iframe>
+&lt;/div>
+&lt;h4 id="2-jw-caterines-video">2. JW Caterine&amp;rsquo;s Video
+&lt;/h4>&lt;p>The second video that I found incredibly helpful was &lt;a class="link" href="https://youtu.be/6MKW4gzLItU?si=oVMr9bvzPc5i5cYF" target="_blank" rel="noopener"
+>How to Setup a Portfolio Website with Hugo&lt;/a> by JW Caterine. Initially, I encountered some issues getting the Stacks theme to work on my setup, but these turned out to be computer-specific problems. This video walks you through a complete cloud-hosted solution and gets you up and running with Hugo in no time. Even better, the solution is free to use.&lt;/p>
+&lt;div class="video-wrapper">
+&lt;iframe loading="lazy"
+src="https://www.youtube.com/embed/6MKW4gzLItU"
+allowfullscreen
+title="YouTube Video"
+>
+&lt;/iframe>
+&lt;/div>
+&lt;h3 id="why-hugo">Why Hugo?
+&lt;/h3>&lt;p>With over 20 years of experience in IT and SaaS, I&amp;rsquo;ve worked with countless platforms and tools. Hugo stands out because of its speed, simplicity, and the control it offers. As someone who values efficiency and customization, Hugo fits perfectly into my workflow. Whether you&amp;rsquo;re a seasoned professional or just starting out, it&amp;rsquo;s a tool worth exploring.&lt;/p>
+&lt;h3 id="what-to-expect">What to Expect
+&lt;/h3>&lt;p>In future posts, I plan to dive deeper into technical topics, share insights from my years in the industry, and provide tips and tutorials for fellow tech enthusiasts. My goal is to create a resource that others can learn from and build upon.&lt;/p>
+&lt;p>If you&amp;rsquo;re considering starting a blog or experimenting with static site generators, I highly recommend giving Hugo a try. Stay tuned for more updates, and feel free to reach out with any questions or suggestions. Let&amp;rsquo;s build something great together!&lt;/p>
+&lt;blockquote>
+&lt;p>Photo by &lt;a class="link" href="https://unsplash.com/@thomasjsn?utm_content=creditCopyText&amp;amp;utm_medium=referral&amp;amp;utm_source=unsplash" target="_blank" rel="noopener"
+>Thomas Jensen&lt;/a> on &lt;a class="link" href="https://unsplash.com" target="_blank" rel="noopener"
+>Unsplash&lt;/a>&lt;/p>
+&lt;/blockquote></description></item></channel></rss>
