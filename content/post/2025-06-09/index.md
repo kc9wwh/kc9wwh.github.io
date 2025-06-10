@@ -7,7 +7,7 @@ categories: [Tech]
 tags: [Fleet, Docker, Open Source, MySQL, Redis]
 hidden: false
 comments: true
-draft: true
+draft: false
 ---
 # Introduction: Unleash the Power of Fleet with Docker!
 In today's complex digital landscape, achieving comprehensive endpoint visibility is paramount for robust security and efficient IT operations. Fleet, an open-source platform, leverages the power of osquery to provide deep insights into device fleets, covering Linux, macOS, Windows, and even Chromebooks. It's a versatile tool for vulnerability reporting, detection engineering, device management (MDM), and monitoring device health. However, setting up any powerful platform can sometimes seem daunting, particularly when considering resource allocation for testing or initial exploration.
