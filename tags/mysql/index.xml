@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>MySQL on KC9WWH</title><link>https://kc9wwh.net/tags/mysql/</link><description>Recent content in MySQL on KC9WWH</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Mon, 09 Jun 2025 12:33:38 +0000</lastBuildDate><atom:link href="https://kc9wwh.net/tags/mysql/index.xml" rel="self" type="application/rss+xml"/><item><title>Getting started with Fleet</title><link>https://kc9wwh.net/p/getting-started-with-fleet/</link><pubDate>Mon, 09 Jun 2025 12:33:38 +0000</pubDate><guid>https://kc9wwh.net/p/getting-started-with-fleet/</guid><description>&lt;img src="https://kc9wwh.net/p/getting-started-with-fleet/cover.jpg" alt="Featured image of post Getting started with Fleet" />&lt;h1 id="introduction-unleash-the-power-of-fleet-with-docker">Introduction: Unleash the Power of Fleet with Docker!
+&lt;/h1>&lt;p>In today&amp;rsquo;s complex digital landscape, achieving comprehensive endpoint visibility is paramount for robust security and efficient IT operations. Fleet, an open-source platform, leverages the power of osquery to provide deep insights into device fleets, covering Linux, macOS, Windows, and even Chromebooks. It&amp;rsquo;s a versatile tool for vulnerability reporting, detection engineering, device management (MDM), and monitoring device health. However, setting up any powerful platform can sometimes seem daunting, particularly when considering resource allocation for testing or initial exploration.&lt;/p>
+&lt;p>This is where the magic of Docker comes into play. This guide demonstrates how to launch a fully functional Fleet environment—complete with its necessary database and caching layer—using individual &lt;code>docker run&lt;/code> commands. This approach offers a lightweight, fast, and isolated method to get hands-on with Fleet, making it ideal for IT and security professionals, DevOps engineers, or anyone curious to explore osquery management at scale with minimal upfront commitment.&lt;/p>
+&lt;h2 id="why-docker-for-fleet-the-easy-button-approach">Why Docker for Fleet? The &amp;ldquo;Easy Button&amp;rdquo; Approach
+&lt;/h2>&lt;p>Utilizing Docker for deploying Fleet presents several compelling advantages, especially for evaluation, development, or smaller-scale use cases:&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>Simplicity&lt;/strong>: Docker encapsulates each component of the Fleet stack (Fleet server, MySQL database, Redis cache) into its own container. This packaging simplifies deployment and dependency management.&lt;/li>
+&lt;li>&lt;strong>Speed&lt;/strong>: With a few Docker commands, the entire stack can be provisioned and running in minutes. Similarly, tearing down the environment is just as quick, leaving the host system clean.&lt;/li>
+&lt;li>&lt;strong>Isolation&lt;/strong>: Containers run in isolated environments, preventing conflicts with other software or configurations on the host machine. This is perfect for testing without impacting existing setups.&lt;/li>
+&lt;li>&lt;strong>Resource Efficiency&lt;/strong>: Docker containers are generally more lightweight than full virtual machines. This makes it feasible to run Fleet on a local machine or a small server for testing purposes.&lt;/li>
+&lt;li>&lt;strong>Consistency&lt;/strong>: Docker ensures that the Fleet environment is consistent across different machines, from a developer&amp;rsquo;s laptop to a test server.&lt;/li>
+&lt;/ul>
+&lt;h2 id="prerequisites-whats-needed">Prerequisites: What&amp;rsquo;s Needed
+&lt;/h2>&lt;p>To embark on this Dockerized Fleet journey, only a few items are necessary:&lt;/p>
+&lt;ul>
+&lt;li>Docker Engine installed on the host system.&lt;/li>
+&lt;li>Basic familiarity with command-line interface (CLI) operations.&lt;/li>
+&lt;li>A spirit of exploration to dive into the capabilities of Fleet!&lt;/li>
+&lt;/ul>
+&lt;h2 id="the-architecture-the-dockerized-fleet-stack">The Architecture: The Dockerized Fleet Stack
+&lt;/h2>&lt;p>The setup will consist of the following components, all running in separate Docker containers:&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>fleetdm/fleet:latest&lt;/code>: The core Fleet server application.&lt;/li>
+&lt;li>&lt;code>mysql:8.0.36&lt;/code>: A MySQL database instance to store Fleet&amp;rsquo;s metadata.&lt;/li>
+&lt;li>&lt;code>redis&lt;/code>: A Redis instance used by Fleet for caching and managing live query sessions.&lt;/li>
+&lt;/ol>
+&lt;p>These containers will communicate over the host network, so it&amp;rsquo;s important to ensure the IP address used for configuration is accessible from the containers.&lt;/p>
+&lt;h2 id="lets-get-building-step-by-step-with-docker-run">Let&amp;rsquo;s Get Building! Step-by-Step with Docker Run
+&lt;/h2>&lt;p>This section walks through the commands needed to bring the Fleet stack to life.&lt;/p>
+&lt;h3 id="step-1-prepare-host-directories">Step 1: Prepare Host Directories
+&lt;/h3>&lt;p>Before launching the containers, you need to create the directories on your host machine that will be used for persistent storage. This ensures your data isn&amp;rsquo;t lost when containers are stopped or removed.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Create directories for MySQL&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">mkdir -p /mnt/user/appdata/mysql/&lt;span class="o">{&lt;/span>data,logs,conf.d,initdb&lt;span class="o">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1"># Create directory for Fleet&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">mkdir -p /mnt/user/appdata/fleetdm
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="step-2-launch-the-mysql-container">Step 2: Launch the MySQL Container
+&lt;/h3>&lt;p>Run the following command to start the MySQL database. This command maps ports and volumes for data persistence and logging.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">docker run &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -d &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --name&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;MySQL&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --net&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;bridge&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --pids-limit &lt;span class="m">2048&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --privileged&lt;span class="o">=&lt;/span>&lt;span class="nb">true&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="nv">TZ&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;America/Chicago&amp;#34;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;MYSQL_DATABASE&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;fleet&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;MYSQL_USER&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;fleet-user&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;MYSQL_PASSWORD&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;fleet-user-password&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;MYSQL_ROOT_PASSWORD&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;super-secret-password&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -p &lt;span class="s1">&amp;#39;3306:3306/tcp&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -v &lt;span class="s1">&amp;#39;/mnt/user/appdata/mysql/data&amp;#39;&lt;/span>:&lt;span class="s1">&amp;#39;/var/lib/mysql&amp;#39;&lt;/span>:&lt;span class="s1">&amp;#39;rw&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -v &lt;span class="s1">&amp;#39;/mnt/user/appdata/mysql/logs&amp;#39;&lt;/span>:&lt;span class="s1">&amp;#39;/var/log/mysql&amp;#39;&lt;/span>:&lt;span class="s1">&amp;#39;rw&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -v &lt;span class="s1">&amp;#39;/mnt/user/appdata/mysql/conf.d&amp;#39;&lt;/span>:&lt;span class="s1">&amp;#39;/etc/mysql/conf.d&amp;#39;&lt;/span>:&lt;span class="s1">&amp;#39;rw&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -v &lt;span class="s1">&amp;#39;/mnt/user/appdata/mysql/initdb&amp;#39;&lt;/span>:&lt;span class="s1">&amp;#39;/docker-entrypoint-initdb.d&amp;#39;&lt;/span>:&lt;span class="s1">&amp;#39;rw&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --memory&lt;span class="o">=&lt;/span>2G &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --restart&lt;span class="o">=&lt;/span>unless-stopped &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> &lt;span class="s1">&amp;#39;mysql:8.0.36&amp;#39;&lt;/span> mysqld &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --log-error&lt;span class="o">=&lt;/span>/var/log/mysql/error.log
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="step-3-launch-the-redis-container">Step 3: Launch the Redis Container
+&lt;/h3>&lt;p>Next, start the Redis container. It&amp;rsquo;s a simpler setup, primarily needing a port mapping.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">docker run &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -d &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --name&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;Redis&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --net&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;bridge&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --pids-limit &lt;span class="m">2048&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="nv">TZ&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;America/Chicago&amp;#34;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -p &lt;span class="s1">&amp;#39;6379:6379/tcp&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> &lt;span class="s1">&amp;#39;redis&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="step-4-launch-the-fleet-server">Step 4: Launch the Fleet Server
+&lt;/h3>&lt;p>Finally, launch the Fleet server. This command is the most extensive, as it includes configuration details to connect to the MySQL and Redis containers.&lt;/p>
+&lt;p>&lt;strong>Note:&lt;/strong> Make sure to replace &lt;code>192.168.50.129&lt;/code> in the &lt;code>FLEET_MYSQL_ADDRESS&lt;/code> and &lt;code>FLEET_REDIS_ADDRESS&lt;/code> variables with the actual IP address of your Docker host.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">docker run &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -d &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --name&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;fleetdm&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --net&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;bridge&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --pids-limit &lt;span class="m">2048&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="nv">TZ&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;America/Chicago&amp;#34;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;FLEET_MYSQL_ADDRESS&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;192.168.50.129:3306&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;FLEET_MYSQL_DATABASE&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;fleet&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;FLEET_MYSQL_USERNAME&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;fleet-user&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;FLEET_MYSQL_PASSWORD&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;fleet-user-password&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;FLEET_REDIS_ADDRESS&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;192.168.50.129:6379&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;FLEET_OSQUERY_STATUS_LOG_PLUGIN&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;filesystem&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;FLEET_OSQUERY_RESULT_LOG_PLUGIN&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;filesystem&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;FLEET_FILESYSTEM_STATUS_LOG_FILE&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;/mnt/data/logs/status.log&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;FLEET_FILESYSTEM_RESULT_LOG_FILE&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;/mnt/data/logs/result.log&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;FLEET_FILESYSTEM_AUDIT_LOG_FILE&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;/mnt/data/logs/audit.log&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;FLEET_FILESYSTEM_ENABLE_LOG_ROTATION&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;true&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;FLEET_ACTIVITY_ENABLE_AUDIT_LOG&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;true&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;FLEET_ACTIVITY_AUDIT_LOG_PLUGIN&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;filesystem&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;FLEET_LOGGING_DEBUG&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;true&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -e &lt;span class="s1">&amp;#39;FLEET_SERVER_TLS&amp;#39;&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s1">&amp;#39;false&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -p &lt;span class="s1">&amp;#39;8083:8080/tcp&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -p &lt;span class="s1">&amp;#39;8443:443/tcp&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -v &lt;span class="s1">&amp;#39;/mnt/user/appdata/fleetdm&amp;#39;&lt;/span>:&lt;span class="s1">&amp;#39;/mnt/data&amp;#39;&lt;/span>:&lt;span class="s1">&amp;#39;rw&amp;#39;&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> &lt;span class="s1">&amp;#39;fleetdm/fleet:latest&amp;#39;&lt;/span> sh &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> -c &lt;span class="s2">&amp;#34;fleet prepare db &amp;amp;&amp;amp; fleet serve&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>To monitor the logs, especially for the Fleet server, you can run:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">docker logs -f fleetdm
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Look for messages indicating successful database migrations and that the server has started.&lt;/p>
+&lt;h3 id="step-5-accessing-the-fleet-ui">Step 5: Accessing the Fleet UI
+&lt;/h3>&lt;p>Once the containers are running, the Fleet UI should be accessible. Open a web browser and navigate to:&lt;/p>
+&lt;blockquote>
+&lt;p>http://&amp;lt;YOUR_DOCKER_HOST_IP&amp;gt;:8083&lt;/p>&lt;/blockquote>
+&lt;p>The first time you access Fleet, a setup screen will appear to create an administrator account. Follow the on-screen prompts. After setting up the admin user, you will be presented with the Fleet dashboard.&lt;/p>
+&lt;h2 id="bonus-round-enroll-your-first-osquery-agent">BONUS ROUND: Enroll Your First Osquery Agent!
+&lt;/h2>&lt;p>A Fleet server is most useful when it has agents reporting in. You can run an osquery agent as another Docker container.&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>&lt;strong>Obtain Enroll Secret:&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>In the Fleet UI, navigate to &lt;strong>Hosts&lt;/strong> and click the &lt;strong>Add hosts&lt;/strong> button.&lt;/li>
+&lt;li>Fleet will display an enroll secret. Copy this secret for the next step.&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>Run the Osquery Agent Container:&lt;/strong>
+Open a terminal and execute the following command.&lt;/p>
+&lt;ul>
+&lt;li>Replace &lt;code>YOUR_ENROLL_SECRET_FROM_FLEET_UI&lt;/code> with the actual secret from the UI.&lt;/li>
+&lt;li>Replace &lt;code>192.168.50.129&lt;/code> with your Docker host&amp;rsquo;s IP address.&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ol>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">&lt;span class="nv">ENROLL_SECRET&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;YOUR_ENROLL_SECRET_FROM_FLEET_UI&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nv">FLEET_URL&lt;/span>&lt;span class="o">=&lt;/span>&lt;span class="s2">&amp;#34;192.168.50.129:8083&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">docker run -d --name osquery-agent-test &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> osquery/osquery:latest osqueryd &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --enroll_secret&lt;span class="o">=&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nv">ENROLL_SECRET&lt;/span>&lt;span class="si">}&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --tls_hostname&lt;span class="o">=&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nv">FLEET_URL&lt;/span>&lt;span class="si">}&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --enroll_tls_endpoint&lt;span class="o">=&lt;/span>/api/osquery/enroll &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --config_plugin&lt;span class="o">=&lt;/span>tls &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --config_tls_endpoint&lt;span class="o">=&lt;/span>/api/osquery/config &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --logger_plugin&lt;span class="o">=&lt;/span>tls &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --logger_tls_endpoint&lt;span class="o">=&lt;/span>/api/osquery/log &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --disable_distributed&lt;span class="o">=&lt;/span>&lt;span class="nb">false&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --distributed_plugin&lt;span class="o">=&lt;/span>tls &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --distributed_tls_read_endpoint&lt;span class="o">=&lt;/span>/api/osquery/distributed/read &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --distributed_tls_write_endpoint&lt;span class="o">=&lt;/span>/api/osquery/distributed/write &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --host_identifier&lt;span class="o">=&lt;/span>uuid &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --force&lt;span class="o">=&lt;/span>&lt;span class="nb">true&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --verbose&lt;span class="o">=&lt;/span>&lt;span class="nb">false&lt;/span> &lt;span class="se">\
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="se">&lt;/span> --tls_allow_unsafe&lt;span class="o">=&lt;/span>&lt;span class="nb">true&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>After a few moments, the new host should appear on the &lt;strong>Hosts&lt;/strong> page in the Fleet UI.&lt;/p>
+&lt;h2 id="cleaning-up-returning-to-shore">Cleaning Up: Returning to Shore
+&lt;/h2>&lt;p>When you&amp;rsquo;re finished exploring, you can cleanly remove the entire Fleet stack.&lt;/p>
+&lt;ol>
+&lt;li>
+&lt;p>&lt;strong>Stop the Containers:&lt;/strong>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">docker stop MySQL Redis fleetdm osquery-agent-test
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>Remove the Containers:&lt;/strong>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">docker rm MySQL Redis fleetdm osquery-agent-test
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;/li>
+&lt;li>
+&lt;p>&lt;strong>(Optional) Remove Host Directories:&lt;/strong>
+If you want to remove all persisted data, you can delete the directories you created earlier:&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-bash" data-lang="bash">&lt;span class="line">&lt;span class="cl">rm -rf /mnt/user/appdata/mysql
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">rm -rf /mnt/user/appdata/fleetdm
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;/li>
+&lt;/ol>
+&lt;p>And just like that, the system is back to its original state. This ease of teardown is invaluable for experimentation.&lt;/p>
+&lt;h2 id="teaser-for-part-2---s3-storage">Teaser for Part 2 - S3 Storage!
+&lt;/h2>&lt;p>Feeling adventurous? Ready to take this Fleet setup to the next frontier? This Dockerized deployment is fantastic for getting started, but for more persistent or larger-scale scenarios, especially involving log retention and file carving, a more robust storage solution is beneficial.&lt;/p>
+&lt;p>&lt;strong>Stay Tuned!&lt;/strong> In the next article in this series, the Fleet deployment will be supercharged by configuring &lt;strong>S3-compatible object storage (using MinIO, all in Docker, of course!)&lt;/strong> for scalable log and file carve storage. Imagine effortlessly storing and managing extensive endpoint data!&lt;/p>
+&lt;p>Catch ya on the next project!&lt;/p>
+&lt;p>Josh 🖖&lt;/p>
+&lt;blockquote>
+&lt;p>Photo by &lt;a class="link" href="https://unsplash.com/@afgprogrammer?utm_content=creditCopyText&amp;amp;utm_medium=referral&amp;amp;utm_source=unsplash" target="_blank" rel="noopener"
+>Mohammad Rahmani&lt;/a> on &lt;a class="link" href="https://unsplash.com" target="_blank" rel="noopener"
+>Unsplash&lt;/a>&lt;/p>&lt;/blockquote></description></item><item><title>Don't Forget to Apply Updates to your DB</title><link>https://kc9wwh.net/p/dont-forget-to-apply-updates-to-your-db/</link><pubDate>Sun, 26 Jan 2025 08:33:38 +0000</pubDate><guid>https://kc9wwh.net/p/dont-forget-to-apply-updates-to-your-db/</guid><description>&lt;img src="https://kc9wwh.net/p/dont-forget-to-apply-updates-to-your-db/cover.jpg" alt="Featured image of post Don't Forget to Apply Updates to your DB" />&lt;p>About a month ago I setup &lt;a class="link" href="https://fleetdm.com" target="_blank" rel="noopener"
+>Fleet Device Management&lt;/a> and since then there have been a couple updates that have come out and along with that some required database migrations or updates that needed to happen. Unlike with other MDM&amp;rsquo;s I&amp;rsquo;ve used in the past, the migrations that needed to happen on the database do not auto apply when an upgraded version is ran against it. Instead, you need to manually complete them.&lt;/p>
+&lt;p>Now I&amp;rsquo;ve see these warning for a couple of weeks, but kept putting them off. Until today at least, as after updating my fleetdm/fleet docker container to the latest version, Fleet would no longer startup. &lt;em>ruh-roh!&lt;/em>&lt;/p>
+&lt;p>What is the first thing we do when a server doesn&amp;rsquo;t boot, we try again&amp;hellip;only, that didn&amp;rsquo;t work.&lt;/p>
+&lt;p>Whats the second thing we do? That&amp;rsquo;s right! We check the logs, and those logs were all about telling me I really need to do these database migrations. But how since the docker container immediately stops after starting it?&lt;/p>
+&lt;p>First we need to understand why the container keeps stopping. That is because unless a docker container is doing something (i.e., a service is actively running on the container), docker, will stop the container to save on resources being wasted. So, how do we overcome this when the container isn&amp;rsquo;t doing what we &lt;em>want&lt;/em> it to do? We give it something else to do, by having it run tail against &lt;code>/dev/null&lt;/code>.&lt;/p>
+&lt;p>&lt;strong>Normal docker run Command:&lt;/strong>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">docker run
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -d
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> --name=&amp;#39;fleetdm&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> --net=&amp;#39;bridge&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> --pids-limit 2048
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e TZ=&amp;#34;America/Chicago&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e HOST_HOSTNAME=&amp;#34;Loki&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e HOST_CONTAINERNAME=&amp;#34;fleetdm&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MYSQL_ADDRESS&amp;#39;=&amp;#39;10.0.10.82:3306&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MYSQL_DATABASE&amp;#39;=&amp;#39;YOUR_FLEET_DB&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MYSQL_USERNAME&amp;#39;=&amp;#39;YOUR_FLEET_USER&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MYSQL_PASSWORD&amp;#39;=&amp;#39;YOUR_FLEET_PASS&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_REDIS_ADDRESS&amp;#39;=&amp;#39;192.168.50.129:6379&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_SERVER_CERT&amp;#39;=&amp;#39;/mnt/data/certs/certificate.crt&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_SERVER_KEY&amp;#39;=&amp;#39;/mnt/data/certs/private.key&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MDM_WINDOWS_WSTEP_IDENTITY_CERT&amp;#39;=&amp;#39;/mnt/data/win_mdm_certs/fleet-mdm-win-wstep.crt&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MDM_WINDOWS_WSTEP_IDENTITY_KEY&amp;#39;=&amp;#39;/mnt/data/win_mdm_certs/fleet-mdm-win-wstep.key&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_SERVER_PRIVATE_KEY&amp;#39;=&amp;#39;YOUR_SERVER_PRIVATE_KEY&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_LICENSE_KEY&amp;#39;=&amp;#39;YOUR_KEY_HERE&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_OSQUERY_STATUS_LOG_PLUGIN&amp;#39;=&amp;#39;filesystem&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_OSQUERY_RESULT_LOG_PLUGIN&amp;#39;=&amp;#39;filesystem&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_FILESYSTEM_STATUS_LOG_FILE&amp;#39;=&amp;#39;/mnt/data/logs/status.log&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_FILESYSTEM_RESULT_LOG_FILE&amp;#39;=&amp;#39;/mnt/data/logs/result.log&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_FILESYSTEM_AUDIT_LOG_FILE&amp;#39;=&amp;#39;/mnt/data/logs/audit.log&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_FILESYSTEM_ENABLE_LOG_ROTATION&amp;#39;=&amp;#39;true&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_ACTIVITY_ENABLE_AUDIT_LOG&amp;#39;=&amp;#39;true&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_ACTIVITY_AUDIT_LOG_PLUGIN&amp;#39;=&amp;#39;filesystem&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_LOGGING_DEBUG&amp;#39;=&amp;#39;true&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -p &amp;#39;8081:8080/tcp&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -v &amp;#39;/mnt/user/appdata/fleetdm&amp;#39;:&amp;#39;/mnt/data&amp;#39;:&amp;#39;rw&amp;#39; &amp;#39;fleetdm/fleet&amp;#39;
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;strong>Normal docker run w/ Tail Command:&lt;/strong>&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">docker run
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -d
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> --name=&amp;#39;fleetdm&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> --net=&amp;#39;bridge&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> --pids-limit 2048
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e TZ=&amp;#34;America/Chicago&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e HOST_HOSTNAME=&amp;#34;Loki&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e HOST_CONTAINERNAME=&amp;#34;fleetdm&amp;#34;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MYSQL_ADDRESS&amp;#39;=&amp;#39;10.0.10.82:3306&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MYSQL_DATABASE&amp;#39;=&amp;#39;YOUR_FLEET_DB&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MYSQL_USERNAME&amp;#39;=&amp;#39;YOUR_FLEET_USER&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MYSQL_PASSWORD&amp;#39;=&amp;#39;YOUR_FLEET_PASS&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_REDIS_ADDRESS&amp;#39;=&amp;#39;192.168.50.129:6379&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_SERVER_CERT&amp;#39;=&amp;#39;/mnt/data/certs/certificate.crt&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_SERVER_KEY&amp;#39;=&amp;#39;/mnt/data/certs/private.key&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MDM_WINDOWS_WSTEP_IDENTITY_CERT&amp;#39;=&amp;#39;/mnt/data/win_mdm_certs/fleet-mdm-win-wstep.crt&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_MDM_WINDOWS_WSTEP_IDENTITY_KEY&amp;#39;=&amp;#39;/mnt/data/win_mdm_certs/fleet-mdm-win-wstep.key&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_SERVER_PRIVATE_KEY&amp;#39;=&amp;#39;YOUR_SERVER_PRIVATE_KEY&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_LICENSE_KEY&amp;#39;=&amp;#39;YOUR_KEY_HERE&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_OSQUERY_STATUS_LOG_PLUGIN&amp;#39;=&amp;#39;filesystem&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_OSQUERY_RESULT_LOG_PLUGIN&amp;#39;=&amp;#39;filesystem&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_FILESYSTEM_STATUS_LOG_FILE&amp;#39;=&amp;#39;/mnt/data/logs/status.log&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_FILESYSTEM_RESULT_LOG_FILE&amp;#39;=&amp;#39;/mnt/data/logs/result.log&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_FILESYSTEM_AUDIT_LOG_FILE&amp;#39;=&amp;#39;/mnt/data/logs/audit.log&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_FILESYSTEM_ENABLE_LOG_ROTATION&amp;#39;=&amp;#39;true&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_ACTIVITY_ENABLE_AUDIT_LOG&amp;#39;=&amp;#39;true&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_ACTIVITY_AUDIT_LOG_PLUGIN&amp;#39;=&amp;#39;filesystem&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -e &amp;#39;FLEET_LOGGING_DEBUG&amp;#39;=&amp;#39;true&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -p &amp;#39;8081:8080/tcp&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> -v &amp;#39;/mnt/user/appdata/fleetdm&amp;#39;:&amp;#39;/mnt/data&amp;#39;:&amp;#39;rw&amp;#39; &amp;#39;fleetdm/fleet&amp;#39;
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> tail -f /dev/null
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Now that I gave the container something to do, besides starting Fleet since that is immediately stopping, I can now pull up an interactive terminal and perform the database migrations.&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">docker exec -it fleetdm fleet prepare db
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>You could also run this as a non-interactive command using &lt;code>docker exec fleetdm fleet prepare db&lt;/code>, but as it was the first time running this for an upgrade, I wanted to be able to walk through it without the terminal session suddenly closing.&lt;/p>
+&lt;p>That was it! Pretty painless once you know what you&amp;rsquo;re doing, but definitely something you need to be aware of when performing upgrades to Fleet and to always check if there are any pending db migrations that need to occur after.&lt;/p>
+&lt;p>Catch ya on the next project!&lt;/p>
+&lt;p>Josh 🖖&lt;/p>
+&lt;blockquote>
+&lt;p>Photo by &lt;a class="link" href="https://unsplash.com/@ffstop?utm_content=creditCopyText&amp;amp;utm_medium=referral&amp;amp;utm_source=unsplash" target="_blank" rel="noopener"
+>Fotis Fotopoulos&lt;/a> on &lt;a class="link" href="https://unsplash.com" target="_blank" rel="noopener"
+>Unsplash&lt;/a>&lt;/p>&lt;/blockquote></description></item></channel></rss>
