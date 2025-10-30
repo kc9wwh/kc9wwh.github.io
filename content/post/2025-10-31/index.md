@@ -7,7 +7,7 @@ categories: [Tech]
 tags: [Fleet, Linux, Bash, Open Source, Device Management]
 hidden: false
 comments: true
-draft: true
+draft: false
 ---
 
 # Running Commands as the Active User on Linux with Fleet
