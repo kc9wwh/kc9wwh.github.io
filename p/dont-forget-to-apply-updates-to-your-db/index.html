@@ -1,0 +1,145 @@
+<!doctype html><html lang=en-us dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="Why putting off those db migration warnings is a bad idea.."><title>Don't Forget to Apply Updates to your DB</title><link rel=canonical href=https://kc9wwh.net/p/dont-forget-to-apply-updates-to-your-db/><link rel=stylesheet href=/scss/style.min.6a692fd055deae459f2a9767f57f3855ba80cafd5041317f24f7360f6ca47cdf.css><meta property='og:title' content="Don't Forget to Apply Updates to your DB"><meta property='og:description' content="Why putting off those db migration warnings is a bad idea.."><meta property='og:url' content='https://kc9wwh.net/p/dont-forget-to-apply-updates-to-your-db/'><meta property='og:site_name' content='KC9WWH'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='Fleet'><meta property='article:tag' content='Docker'><meta property='article:tag' content='Open Source'><meta property='article:tag' content='MySQL'><meta property='article:published_time' content='2025-01-26T08:33:38+00:00'><meta property='article:modified_time' content='2025-01-26T08:33:38+00:00'><meta property='og:image' content='https://kc9wwh.net/p/dont-forget-to-apply-updates-to-your-db/cover.jpg'><meta name=twitter:title content="Don't Forget to Apply Updates to your DB"><meta name=twitter:description content="Why putting off those db migration warnings is a bad idea.."><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content='https://kc9wwh.net/p/dont-forget-to-apply-updates-to-your-db/cover.jpg'><link rel="shortcut icon" href=/favicon.ico></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label="Toggle Menu">
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/me_hu_f983ae9d37eaea9d.jpg width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>🎗️</span></figure><div class=site-meta><h1 class=site-name><a href=/>KC9WWH</a></h1><h2 class=site-description>Father, Husband, Geek and Treky writing about random projects</h2></div></header><ol class=menu-social><li><a href='mailto:josh@kc9wwh.net?subject=Blog%20Contact%20Request' target=_blank title="Contact me" rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-message-chatbot"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 4a3 3 0 013 3v8a3 3 0 01-3 3h-5l-5 3v-3H6a3 3 0 01-3-3V7a3 3 0 013-3h12z"/><path d="M9.5 9h.01"/><path d="M14.5 9h.01"/><path d="M9.5 13a3.5 3.5.0 005 0"/></svg></a></li><li><a href=https://github.com/kc9wwh target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=https://www.linkedin.com/in/jroskos/ target=_blank title=LinkedIn rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-linkedin"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 11v5"/><path d="M8 8v.01"/><path d="M12 16v-5"/><path d="M16 16v-3a2 2 0 10-4 0"/><path d="M3 7a4 4 0 014-4h10a4 4 0 014 4v10a4 4 0 01-4 4H7a4 4 0 01-4-4z"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>Home</span></a></li><li><a href=/about-me/><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-user"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 7a4 4 0 108 0A4 4 0 008 7"/><path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>
+<span>About Me</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>Archives</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>Search</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>Dark Mode</span></li></ol></li></ol></aside><main class="main full-width"><article class="has-image main-article"><header class=article-header><div class=article-image><a href=/p/dont-forget-to-apply-updates-to-your-db/><img src=/p/dont-forget-to-apply-updates-to-your-db/cover_hu_a8e5353be2605003.jpg srcset="/p/dont-forget-to-apply-updates-to-your-db/cover_hu_a8e5353be2605003.jpg 800w, /p/dont-forget-to-apply-updates-to-your-db/cover_hu_7f8c78e396e8b420.jpg 1600w" width=800 height=533 loading=lazy alt="Featured image of post Don't Forget to Apply Updates to your DB"></a></div><div class=article-details><header class=article-category><a href=/categories/tech/ style=background-color:#09f;color:#fff>Tech</a></header><div class=article-title-wrapper><h2 class=article-title><a href=/p/dont-forget-to-apply-updates-to-your-db/>Don't Forget to Apply Updates to your DB</a></h2><h3 class=article-subtitle>Why putting off those db migration warnings is a bad idea..</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published>Jan 26, 2025</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>3 minute read</time></div></footer></div></header><section class=article-content><p>About a month ago I setup <a class=link href=https://fleetdm.com target=_blank rel=noopener>Fleet Device Management</a> and since then there have been a couple updates that have come out and along with that some required database migrations or updates that needed to happen. Unlike with other MDM&rsquo;s I&rsquo;ve used in the past, the migrations that needed to happen on the database do not auto apply when an upgraded version is ran against it. Instead, you need to manually complete them.</p><p>Now I&rsquo;ve see these warning for a couple of weeks, but kept putting them off. Until today at least, as after updating my fleetdm/fleet docker container to the latest version, Fleet would no longer startup. <em>ruh-roh!</em></p><p>What is the first thing we do when a server doesn&rsquo;t boot, we try again&mldr;only, that didn&rsquo;t work.</p><p>Whats the second thing we do? That&rsquo;s right! We check the logs, and those logs were all about telling me I really need to do these database migrations. But how since the docker container immediately stops after starting it?</p><p>First we need to understand why the container keeps stopping. That is because unless a docker container is doing something (i.e., a service is actively running on the container), docker, will stop the container to save on resources being wasted. So, how do we overcome this when the container isn&rsquo;t doing what we <em>want</em> it to do? We give it something else to do, by having it run tail against <code>/dev/null</code>.</p><p><strong>Normal docker run Command:</strong></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>docker run
+</span></span><span class=line><span class=cl>  -d
+</span></span><span class=line><span class=cl>  --name=&#39;fleetdm&#39;
+</span></span><span class=line><span class=cl>  --net=&#39;bridge&#39;
+</span></span><span class=line><span class=cl>  --pids-limit 2048
+</span></span><span class=line><span class=cl>  -e TZ=&#34;America/Chicago&#34;
+</span></span><span class=line><span class=cl>  -e HOST_HOSTNAME=&#34;Loki&#34;
+</span></span><span class=line><span class=cl>  -e HOST_CONTAINERNAME=&#34;fleetdm&#34;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_MYSQL_ADDRESS&#39;=&#39;10.0.10.82:3306&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_MYSQL_DATABASE&#39;=&#39;YOUR_FLEET_DB&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_MYSQL_USERNAME&#39;=&#39;YOUR_FLEET_USER&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_MYSQL_PASSWORD&#39;=&#39;YOUR_FLEET_PASS&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_REDIS_ADDRESS&#39;=&#39;192.168.50.129:6379&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_SERVER_CERT&#39;=&#39;/mnt/data/certs/certificate.crt&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_SERVER_KEY&#39;=&#39;/mnt/data/certs/private.key&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_MDM_WINDOWS_WSTEP_IDENTITY_CERT&#39;=&#39;/mnt/data/win_mdm_certs/fleet-mdm-win-wstep.crt&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_MDM_WINDOWS_WSTEP_IDENTITY_KEY&#39;=&#39;/mnt/data/win_mdm_certs/fleet-mdm-win-wstep.key&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_SERVER_PRIVATE_KEY&#39;=&#39;YOUR_SERVER_PRIVATE_KEY&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_LICENSE_KEY&#39;=&#39;YOUR_KEY_HERE&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_OSQUERY_STATUS_LOG_PLUGIN&#39;=&#39;filesystem&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_OSQUERY_RESULT_LOG_PLUGIN&#39;=&#39;filesystem&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_FILESYSTEM_STATUS_LOG_FILE&#39;=&#39;/mnt/data/logs/status.log&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_FILESYSTEM_RESULT_LOG_FILE&#39;=&#39;/mnt/data/logs/result.log&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_FILESYSTEM_AUDIT_LOG_FILE&#39;=&#39;/mnt/data/logs/audit.log&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_FILESYSTEM_ENABLE_LOG_ROTATION&#39;=&#39;true&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_ACTIVITY_ENABLE_AUDIT_LOG&#39;=&#39;true&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_ACTIVITY_AUDIT_LOG_PLUGIN&#39;=&#39;filesystem&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_LOGGING_DEBUG&#39;=&#39;true&#39;
+</span></span><span class=line><span class=cl>  -p &#39;8081:8080/tcp&#39;
+</span></span><span class=line><span class=cl>  -v &#39;/mnt/user/appdata/fleetdm&#39;:&#39;/mnt/data&#39;:&#39;rw&#39; &#39;fleetdm/fleet&#39;
+</span></span></code></pre></td></tr></table></div></div><p><strong>Normal docker run w/ Tail Command:</strong></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>docker run
+</span></span><span class=line><span class=cl>  -d
+</span></span><span class=line><span class=cl>  --name=&#39;fleetdm&#39;
+</span></span><span class=line><span class=cl>  --net=&#39;bridge&#39;
+</span></span><span class=line><span class=cl>  --pids-limit 2048
+</span></span><span class=line><span class=cl>  -e TZ=&#34;America/Chicago&#34;
+</span></span><span class=line><span class=cl>  -e HOST_HOSTNAME=&#34;Loki&#34;
+</span></span><span class=line><span class=cl>  -e HOST_CONTAINERNAME=&#34;fleetdm&#34;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_MYSQL_ADDRESS&#39;=&#39;10.0.10.82:3306&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_MYSQL_DATABASE&#39;=&#39;YOUR_FLEET_DB&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_MYSQL_USERNAME&#39;=&#39;YOUR_FLEET_USER&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_MYSQL_PASSWORD&#39;=&#39;YOUR_FLEET_PASS&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_REDIS_ADDRESS&#39;=&#39;192.168.50.129:6379&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_SERVER_CERT&#39;=&#39;/mnt/data/certs/certificate.crt&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_SERVER_KEY&#39;=&#39;/mnt/data/certs/private.key&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_MDM_WINDOWS_WSTEP_IDENTITY_CERT&#39;=&#39;/mnt/data/win_mdm_certs/fleet-mdm-win-wstep.crt&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_MDM_WINDOWS_WSTEP_IDENTITY_KEY&#39;=&#39;/mnt/data/win_mdm_certs/fleet-mdm-win-wstep.key&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_SERVER_PRIVATE_KEY&#39;=&#39;YOUR_SERVER_PRIVATE_KEY&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_LICENSE_KEY&#39;=&#39;YOUR_KEY_HERE&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_OSQUERY_STATUS_LOG_PLUGIN&#39;=&#39;filesystem&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_OSQUERY_RESULT_LOG_PLUGIN&#39;=&#39;filesystem&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_FILESYSTEM_STATUS_LOG_FILE&#39;=&#39;/mnt/data/logs/status.log&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_FILESYSTEM_RESULT_LOG_FILE&#39;=&#39;/mnt/data/logs/result.log&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_FILESYSTEM_AUDIT_LOG_FILE&#39;=&#39;/mnt/data/logs/audit.log&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_FILESYSTEM_ENABLE_LOG_ROTATION&#39;=&#39;true&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_ACTIVITY_ENABLE_AUDIT_LOG&#39;=&#39;true&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_ACTIVITY_AUDIT_LOG_PLUGIN&#39;=&#39;filesystem&#39;
+</span></span><span class=line><span class=cl>  -e &#39;FLEET_LOGGING_DEBUG&#39;=&#39;true&#39;
+</span></span><span class=line><span class=cl>  -p &#39;8081:8080/tcp&#39;
+</span></span><span class=line><span class=cl>  -v &#39;/mnt/user/appdata/fleetdm&#39;:&#39;/mnt/data&#39;:&#39;rw&#39; &#39;fleetdm/fleet&#39;
+</span></span><span class=line><span class=cl>  tail -f /dev/null
+</span></span></code></pre></td></tr></table></div></div><p>Now that I gave the container something to do, besides starting Fleet since that is immediately stopping, I can now pull up an interactive terminal and perform the database migrations.</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>docker exec -it fleetdm fleet prepare db
+</span></span></code></pre></td></tr></table></div></div><p>You could also run this as a non-interactive command using <code>docker exec fleetdm fleet prepare db</code>, but as it was the first time running this for an upgrade, I wanted to be able to walk through it without the terminal session suddenly closing.</p><p>That was it! Pretty painless once you know what you&rsquo;re doing, but definitely something you need to be aware of when performing upgrades to Fleet and to always check if there are any pending db migrations that need to occur after.</p><p>Catch ya on the next project!</p><p>Josh 🖖</p><blockquote><p>Photo by <a class=link href="https://unsplash.com/@ffstop?utm_content=creditCopyText&amp;utm_medium=referral&amp;utm_source=unsplash" target=_blank rel=noopener>Fotis Fotopoulos</a> on <a class=link href=https://unsplash.com target=_blank rel=noopener>Unsplash</a></p></blockquote></section><footer class=article-footer><section class=article-tags><a href=/tags/fleet/>Fleet</a>
+<a href=/tags/docker/>Docker</a>
+<a href=/tags/open-source/>Open Source</a>
+<a href=/tags/mysql/>MySQL</a></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>Related content</h2><div class=related-content><div class="flex article-list--tile"><article class=has-image><a href=/p/getting-started-with-fleet/><div class=article-image><img src=/p/getting-started-with-fleet/cover.b0fa9547f32b6b0ceeab2a13ffc125e2_hu_319c395e4dc53d5c.jpg width=250 height=150 loading=lazy alt="Featured image of post Getting started with Fleet" data-hash="md5-sPqVR/MrawzuqyoT/8El4g=="></div><div class=article-details><h2 class=article-title>Getting started with Fleet</h2></div></a></article><article class=has-image><a href=/p/running-commands-as-the-active-user-on-linux-with-fleet/><div class=article-image><img src=/p/running-commands-as-the-active-user-on-linux-with-fleet/cover.d22b0a1cde9be772d6636cc72c3aed2b_hu_9b93a8bf05372786.jpg width=250 height=150 loading=lazy alt="Featured image of post Running Commands as the Active User on Linux with Fleet" data-hash="md5-0isKHN6b53LWY2zHLDrtKw=="></div><div class=article-details><h2 class=article-title>Running Commands as the Active User on Linux with Fleet</h2></div></a></article><article class=has-image><a href=/p/starting-my-journey-with-hugo/><div class=article-image><img src=/p/starting-my-journey-with-hugo/cover.b7e0e757f41bc6e4df9bde33eef50dce_hu_13d5e2f17ea478f2.jpg width=250 height=150 loading=lazy alt="Featured image of post Starting my journey with Hugo" data-hash="md5-t+DnV/QbxuTfm94z7vUNzg=="></div><div class=article-details><h2 class=article-title>Starting my journey with Hugo</h2></div></a></article><article class=has-image><a href=/p/the-first-issue-with-starting-a-blog/><div class=article-image><img src=/p/the-first-issue-with-starting-a-blog/cover.610189ced74c30c4ec18e7c95924177f_hu_e09648181488dfac.jpg width=250 height=150 loading=lazy alt="Featured image of post The First Issue with Starting a Blog" data-hash="md5-YQGJztdMMMTsGOfJWSQXfw=="></div><div class=article-details><h2 class=article-title>The First Issue with Starting a Blog</h2></div></a></article><article class=has-image><a href=/p/the-start-of-a-journey/><div class=article-image><img src=/p/the-start-of-a-journey/cover.1d5447fa099335e8051a434e5a7c6851_hu_9e4cce62fe2e4985.jpg width=250 height=150 loading=lazy alt="Featured image of post The start of a journey" data-hash="md5-HVRH+gmTNegFGkNOWnxoUQ=="></div><div class=article-details><h2 class=article-title>The start of a journey</h2></div></a></article></div></div></aside><div class=disqus-container><div id=disqus_thread></div><script>window.disqus_config=function(){},function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("disqus_thread").innerHTML="Disqus comments not available by default when the website is previewed locally.";return}var t=document,e=t.createElement("script");e.async=!0,e.src="//kc9wwh.disqus.com/embed.js",e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)}()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><a href=https://disqus.com class=dsq-brlink>comments powered by <span class=logo-disqus>Disqus</span></a></div><style>.disqus-container{background-color:var(--card-background);border-radius:var(--card-border-radius);box-shadow:var(--shadow-l1);padding:var(--card-padding)}</style><script>window.addEventListener("onColorSchemeChange",e=>{typeof DISQUS=="object"&&DISQUS.reset({reload:!0})})</script><footer class=site-footer><section class=copyright>&copy;
+2020 -
+2025 KC9WWH</section><section class=powerby>Joshua Roskos<br>Built with <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a><br>Theme <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.30.0>Stack</a></b> designed by <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a></section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.1e9a3bafd846ced4c345d084b355fb8c7bae75701c338f8a1f8a82c780137826.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script><script async data-id=101476463 src=//static.getclicky.com/js></script></body></html>

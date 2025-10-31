@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Static Sites on KC9WWH</title><link>https://kc9wwh.net/tags/static-sites/</link><description>Recent content in Static Sites on KC9WWH</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Wed, 01 Jan 2025 23:33:38 +0000</lastBuildDate><atom:link href="https://kc9wwh.net/tags/static-sites/index.xml" rel="self" type="application/rss+xml"/><item><title>Starting my journey with Hugo</title><link>https://kc9wwh.net/p/starting-my-journey-with-hugo/</link><pubDate>Wed, 01 Jan 2025 23:33:38 +0000</pubDate><guid>https://kc9wwh.net/p/starting-my-journey-with-hugo/</guid><description>&lt;img src="https://kc9wwh.net/p/starting-my-journey-with-hugo/cover.jpg" alt="Featured image of post Starting my journey with Hugo" /&gt;&lt;p&gt;I&amp;rsquo;ve been wanting to start my own blog for quite some time, but it wasn&amp;rsquo;t much of a priority in the past. Now, I find myself kicking myself for not doing this sooner! That said, I&amp;rsquo;m thrilled to share that I&amp;rsquo;ve finally spun up my personal blog and look forward to sharing my knowledge with anyone interested.&lt;/p&gt;
+&lt;p&gt;So, why not start out by talking about my journey with &lt;a class="link" href="https://gohugo.io" target="_blank" rel="noopener"
+&gt;Hugo&lt;/a&gt;? If you&amp;rsquo;re not familiar with Hugo, it is one of the leading static website generators out there. It&amp;rsquo;s extremely fast and pretty easy to use. I will admit, however, that the learning curve can be a bit frustrating at first. While all templates use the same framework, they each have their own unique quirks and niche differences.&lt;/p&gt;
+&lt;h3 id="learning-hugo"&gt;Learning Hugo
+&lt;/h3&gt;&lt;p&gt;I didn&amp;rsquo;t need to reinvent the wheel to get started with Hugo, and I want to give credit where it&amp;rsquo;s due. Two fantastic videos taught me everything I needed to know to get up and running with Hugo and even take things to the next level:&lt;/p&gt;
+&lt;h4 id="1-luke-smiths-video"&gt;1. Luke Smith&amp;rsquo;s Video
+&lt;/h4&gt;&lt;p&gt;The first video that I recommend watching is &lt;a class="link" href="https://youtu.be/ZFL09qhKi5I?si=sqCM8etnmJTTJ8gb" target="_blank" rel="noopener"
+&gt;Hugo Actually Explained (Websites, Themes, Layouts and Intro to Scripting)&lt;/a&gt; by Luke Smith. This video provides a fundamental understanding of Hugo and its data structure. It&amp;rsquo;s an excellent starting point for anyone new to Hugo.&lt;/p&gt;
+&lt;div class="video-wrapper"&gt;
+&lt;iframe loading="lazy"
+src="https://www.youtube.com/embed/ZFL09qhKi5I"
+allowfullscreen
+title="YouTube Video"
+&gt;
+&lt;/iframe&gt;
+&lt;/div&gt;
+&lt;h4 id="2-jw-caterines-video"&gt;2. JW Caterine&amp;rsquo;s Video
+&lt;/h4&gt;&lt;p&gt;The second video that I found incredibly helpful was &lt;a class="link" href="https://youtu.be/6MKW4gzLItU?si=oVMr9bvzPc5i5cYF" target="_blank" rel="noopener"
+&gt;How to Setup a Portfolio Website with Hugo&lt;/a&gt; by JW Caterine. Initially, I encountered some issues getting the Stacks theme to work on my setup, but these turned out to be computer-specific problems. This video walks you through a complete cloud-hosted solution and gets you up and running with Hugo in no time. Even better, the solution is free to use.&lt;/p&gt;
+&lt;div class="video-wrapper"&gt;
+&lt;iframe loading="lazy"
+src="https://www.youtube.com/embed/6MKW4gzLItU"
+allowfullscreen
+title="YouTube Video"
+&gt;
+&lt;/iframe&gt;
+&lt;/div&gt;
+&lt;h3 id="why-hugo"&gt;Why Hugo?
+&lt;/h3&gt;&lt;p&gt;With over 20 years of experience in IT and SaaS, I&amp;rsquo;ve worked with countless platforms and tools. Hugo stands out because of its speed, simplicity, and the control it offers. As someone who values efficiency and customization, Hugo fits perfectly into my workflow. Whether you&amp;rsquo;re a seasoned professional or just starting out, it&amp;rsquo;s a tool worth exploring.&lt;/p&gt;
+&lt;h3 id="what-to-expect"&gt;What to Expect
+&lt;/h3&gt;&lt;p&gt;In future posts, I plan to dive deeper into technical topics, share insights from my years in the industry, and provide tips and tutorials for fellow tech enthusiasts. My goal is to create a resource that others can learn from and build upon.&lt;/p&gt;
+&lt;p&gt;If you&amp;rsquo;re considering starting a blog or experimenting with static site generators, I highly recommend giving Hugo a try. Stay tuned for more updates, and feel free to reach out with any questions or suggestions. Let&amp;rsquo;s build something great together!&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Photo by &lt;a class="link" href="https://unsplash.com/@thomasjsn?utm_content=creditCopyText&amp;amp;utm_medium=referral&amp;amp;utm_source=unsplash" target="_blank" rel="noopener"
+&gt;Thomas Jensen&lt;/a&gt; on &lt;a class="link" href="https://unsplash.com" target="_blank" rel="noopener"
+&gt;Unsplash&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;</description></item></channel></rss>

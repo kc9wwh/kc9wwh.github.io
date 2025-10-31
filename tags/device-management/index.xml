@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Device Management on KC9WWH</title><link>https://kc9wwh.net/tags/device-management/</link><description>Recent content in Device Management on KC9WWH</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Thu, 30 Oct 2025 23:52:59 +0000</lastBuildDate><atom:link href="https://kc9wwh.net/tags/device-management/index.xml" rel="self" type="application/rss+xml"/><item><title>Running Commands as the Active User on Linux with Fleet</title><link>https://kc9wwh.net/p/running-commands-as-the-active-user-on-linux-with-fleet/</link><pubDate>Thu, 30 Oct 2025 23:52:59 +0000</pubDate><guid>https://kc9wwh.net/p/running-commands-as-the-active-user-on-linux-with-fleet/</guid><description>&lt;img src="https://kc9wwh.net/p/running-commands-as-the-active-user-on-linux-with-fleet/cover.jpg" alt="Featured image of post Running Commands as the Active User on Linux with Fleet" /&gt;&lt;h1 id="running-commands-as-the-active-user-on-linux-with-fleet"&gt;Running Commands as the Active User on Linux with Fleet
+&lt;/h1&gt;&lt;p&gt;If you&amp;rsquo;ve ever tried to display a notification or launch a browser from Fleet on a Linux system, you&amp;rsquo;ve probably run into a frustrating wall: &lt;strong&gt;Fleet runs as root, but graphical applications need to run in the user&amp;rsquo;s session.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Running &lt;code&gt;notify-send&lt;/code&gt; as root does nothing. The notification never appears because it&amp;rsquo;s not connected to the user&amp;rsquo;s display server. Same story with launching Firefox or installing user-specific applications. They need the right environment variables, the right user context, and the right permissions.&lt;/p&gt;
+&lt;p&gt;After seeing customers wrestle with this problem, I built &lt;code&gt;fleet_run_as_user.sh&lt;/code&gt;, a modular library that handles the complexity of executing commands in the active user&amp;rsquo;s graphical session.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;📁 &lt;a class="link" href="https://github.com/kc9wwh/playground/blob/main/scripts/linux/fleet_run_as_user.sh" target="_blank" rel="noopener"
+&gt;Get the library on GitHub →&lt;/a&gt;&lt;/strong&gt;&lt;/p&gt;
+&lt;h2 id="the-problem-root-vs-user-context"&gt;The Problem: Root vs. User Context
+&lt;/h2&gt;&lt;p&gt;Fleet executes scripts with root privileges. That&amp;rsquo;s great for system-level tasks like installing packages or modifying system files. But it creates a challenge when you need to:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Display notifications&lt;/strong&gt; to the logged-in user&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Launch applications&lt;/strong&gt; in the user&amp;rsquo;s GUI environment&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Install software&lt;/strong&gt; in user space (like browser extensions)&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Run scripts&lt;/strong&gt; that require access to user files or settings&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The issue boils down to &lt;strong&gt;environment variables and permissions&lt;/strong&gt;. A graphical application needs:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;DISPLAY&lt;/code&gt; or &lt;code&gt;WAYLAND_DISPLAY&lt;/code&gt; (to know which screen to use)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;XAUTHORITY&lt;/code&gt; (for X11 authentication)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;DBUS_SESSION_BUS_ADDRESS&lt;/code&gt; (for D-Bus communication)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;XDG_RUNTIME_DIR&lt;/code&gt; (for Wayland runtime files)&lt;/li&gt;
+&lt;li&gt;The correct &lt;strong&gt;user ID&lt;/strong&gt; and &lt;strong&gt;session context&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;When you run a command as root, none of these are set correctly. The library solves this by discovering the active session and reconstructing the user&amp;rsquo;s environment.&lt;/p&gt;
+&lt;h2 id="how-it-works-three-step-process"&gt;How It Works: Three-Step Process
+&lt;/h2&gt;&lt;p&gt;The library follows a simple pattern:&lt;/p&gt;
+&lt;h3 id="1-find-the-active-session"&gt;1. Find the Active Session
+&lt;/h3&gt;&lt;p&gt;The &lt;code&gt;find_active_session()&lt;/code&gt; function uses &lt;code&gt;loginctl&lt;/code&gt; to identify the active graphical user session. It tries multiple strategies:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;First, look for a session with &lt;code&gt;seat0&lt;/code&gt; (physical display)&lt;/li&gt;
+&lt;li&gt;If that fails, find any graphical session&lt;/li&gt;
+&lt;li&gt;Fall back to any user session (excluding system sessions)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Once found, it extracts three critical pieces:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;SESSION_ID&lt;/code&gt; (the session identifier)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;SESSION_USER&lt;/code&gt; (the username)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;SESSION_UID&lt;/code&gt; (the user&amp;rsquo;s numeric ID)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="2-extract-display-environment"&gt;2. Extract Display Environment
+&lt;/h3&gt;&lt;p&gt;The &lt;code&gt;get_display_environment()&lt;/code&gt; function reconstructs the user&amp;rsquo;s graphical environment by reading process environment files from &lt;code&gt;/proc&lt;/code&gt;. It:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Starts with the session leader process&lt;/li&gt;
+&lt;li&gt;Searches other user processes if needed&lt;/li&gt;
+&lt;li&gt;Extracts display server variables (&lt;code&gt;DISPLAY&lt;/code&gt;, &lt;code&gt;WAYLAND_DISPLAY&lt;/code&gt;)&lt;/li&gt;
+&lt;li&gt;Captures authentication tokens (&lt;code&gt;XAUTHORITY&lt;/code&gt;, &lt;code&gt;DBUS_SESSION_BUS_ADDRESS&lt;/code&gt;)&lt;/li&gt;
+&lt;li&gt;Sets runtime directory paths (&lt;code&gt;XDG_RUNTIME_DIR&lt;/code&gt;)&lt;/li&gt;
+&lt;li&gt;Falls back to sensible defaults if variables aren&amp;rsquo;t found&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;This approach works for both &lt;strong&gt;X11&lt;/strong&gt; and &lt;strong&gt;Wayland&lt;/strong&gt; display servers.&lt;/p&gt;
+&lt;h3 id="3-execute-in-user-context"&gt;3. Execute in User Context
+&lt;/h3&gt;&lt;p&gt;With session info and environment variables in hand, the library provides two execution functions:&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;&lt;code&gt;run_as_session_user&lt;/code&gt;&lt;/strong&gt; runs commands as the user WITHOUT graphical environment&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Use for: File operations, background tasks, non-GUI commands&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;&lt;code&gt;run_as_graphical_user&lt;/code&gt;&lt;/strong&gt; runs commands WITH full graphical environment&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Use for: Notifications, browser launches, GUI applications&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="implementation-two-ways-to-use-it"&gt;Implementation: Two Ways to Use It
+&lt;/h2&gt;&lt;h3 id="option-1-as-a-library-recommended"&gt;Option 1: As a Library (Recommended)
+&lt;/h3&gt;&lt;p&gt;Source the script and call functions directly:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="cp"&gt;#!/bin/bash
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="cp"&gt;&lt;/span&gt;&lt;span class="nb"&gt;source&lt;/span&gt; /path/to/fleet_run_as_user.sh
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;# Initialize&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;ensure_root &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="nb"&gt;exit&lt;/span&gt; &lt;span class="m"&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;find_active_session &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="nb"&gt;exit&lt;/span&gt; &lt;span class="m"&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;get_display_environment &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="nb"&gt;exit&lt;/span&gt; &lt;span class="m"&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;# Show a notification&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;show_notification &lt;span class="s2"&gt;&amp;#34;Security Update&amp;#34;&lt;/span&gt; &lt;span class="s2"&gt;&amp;#34;Please restart your device&amp;#34;&lt;/span&gt; &lt;span class="s2"&gt;&amp;#34;critical&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;# Launch a browser to your internal portal&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;launch_browser &lt;span class="s2"&gt;&amp;#34;https://portal.yourcompany.com&amp;#34;&lt;/span&gt; &lt;span class="s2"&gt;&amp;#34;firefox&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id="option-2-modify-the-main-function"&gt;Option 2: Modify the Main Function
+&lt;/h3&gt;&lt;p&gt;The script includes a &lt;code&gt;main()&lt;/code&gt; function with examples. Uncomment and customize:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;span class="lnt"&gt;3
+&lt;/span&gt;&lt;span class="lnt"&gt;4
+&lt;/span&gt;&lt;span class="lnt"&gt;5
+&lt;/span&gt;&lt;span class="lnt"&gt;6
+&lt;/span&gt;&lt;span class="lnt"&gt;7
+&lt;/span&gt;&lt;span class="lnt"&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;main&lt;span class="o"&gt;()&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; ensure_root &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="nb"&gt;exit&lt;/span&gt; &lt;span class="m"&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; find_active_session &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="nb"&gt;exit&lt;/span&gt; &lt;span class="m"&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; get_display_environment &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="nb"&gt;exit&lt;/span&gt; &lt;span class="m"&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;# Your custom action here&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; run_as_graphical_user &lt;span class="s2"&gt;&amp;#34;notify-send &amp;#39;Fleet&amp;#39; &amp;#39;Compliance check complete&amp;#39;&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="o"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Then execute the script directly from Fleet.&lt;/p&gt;
+&lt;h2 id="real-world-use-cases"&gt;Real-World Use Cases
+&lt;/h2&gt;&lt;p&gt;&lt;strong&gt;Compliance Notifications&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Notify users when their device falls out of compliance:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;show_notification &lt;span class="s2"&gt;&amp;#34;Action Required&amp;#34;&lt;/span&gt; &lt;span class="s2"&gt;&amp;#34;Your system is missing security updates. Please update within 24 hours.&amp;#34;&lt;/span&gt; &lt;span class="s2"&gt;&amp;#34;critical&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;strong&gt;Self-Service Portal&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Launch a browser to your internal support portal:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;launch_browser &lt;span class="s2"&gt;&amp;#34;https://support.company.com/ticket/12345&amp;#34;&lt;/span&gt; &lt;span class="s2"&gt;&amp;#34;google-chrome&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;strong&gt;User-Space Application Installation&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Install browser extensions or user-specific tools:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;run_as_session_user &lt;span class="s2"&gt;&amp;#34;pip install --user your-package&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;strong&gt;Pre-Restart Warnings&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Give users a heads-up before forced reboots:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;span class="lnt"&gt;3
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;show_notification &lt;span class="s2"&gt;&amp;#34;System Maintenance&amp;#34;&lt;/span&gt; &lt;span class="s2"&gt;&amp;#34;Your device will restart in 5 minutes. Please save your work.&amp;#34;&lt;/span&gt; &lt;span class="s2"&gt;&amp;#34;critical&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;sleep &lt;span class="m"&gt;300&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;reboot
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h2 id="why-it-works-the-technical-details"&gt;Why It Works: The Technical Details
+&lt;/h2&gt;&lt;p&gt;&lt;strong&gt;loginctl vs. who&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;The library uses &lt;code&gt;loginctl&lt;/code&gt; instead of parsing &lt;code&gt;who&lt;/code&gt; or &lt;code&gt;w&lt;/code&gt; because it provides structured session data including session type (graphical vs. non-graphical) and seat information.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Process Environment Discovery&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Reading &lt;code&gt;/proc/&amp;lt;pid&amp;gt;/environ&lt;/code&gt; gives us the actual environment variables from running processes. The library searches multiple processes because not all user processes inherit all variables.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Fallback Defaults&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;If environment variables aren&amp;rsquo;t found, the library uses reasonable defaults (&lt;code&gt;:0&lt;/code&gt; for DISPLAY, &lt;code&gt;wayland-0&lt;/code&gt; for Wayland). This handles edge cases where variables aren&amp;rsquo;t set consistently.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;X11 and Wayland Support&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;By checking for both &lt;code&gt;DISPLAY&lt;/code&gt; and &lt;code&gt;WAYLAND_DISPLAY&lt;/code&gt;, the library works regardless of which display server the distribution uses.&lt;/p&gt;
+&lt;h2 id="troubleshooting"&gt;Troubleshooting
+&lt;/h2&gt;&lt;p&gt;Enable debug mode to see what&amp;rsquo;s happening:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="nv"&gt;DEBUG&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="m"&gt;1&lt;/span&gt; ./fleet_run_as_user.sh
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Common issues:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;&amp;ldquo;Could not find an active user session&amp;rdquo;&lt;/strong&gt; - No user is logged in graphically&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&amp;ldquo;Display environment not set&amp;rdquo;&lt;/strong&gt; - Call &lt;code&gt;get_display_environment&lt;/code&gt; before &lt;code&gt;run_as_graphical_user&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&amp;ldquo;This script must be run as root&amp;rdquo;&lt;/strong&gt; - The script needs root privileges to switch users&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="best-practices"&gt;Best Practices
+&lt;/h2&gt;&lt;p&gt;&lt;strong&gt;Always check return codes&lt;/strong&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;span class="lnt"&gt;3
+&lt;/span&gt;&lt;span class="lnt"&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-bash" data-lang="bash"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="k"&gt;if&lt;/span&gt; ! find_active_session&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; error_log &lt;span class="s2"&gt;&amp;#34;No active session found&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="nb"&gt;exit&lt;/span&gt; &lt;span class="m"&gt;1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="k"&gt;fi&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;strong&gt;Use the right function&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;run_as_session_user&lt;/code&gt; for file operations and background tasks&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;run_as_graphical_user&lt;/code&gt; for anything that needs a display&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Test with DEBUG=1&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Before deploying to production, test with debug logging enabled to verify the correct session and environment are detected.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Handle no-user scenarios&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Not all Linux systems have an active graphical user. Add fallback logic for headless servers or systems where no one is logged in.&lt;/p&gt;
+&lt;h2 id="getting-started"&gt;Getting Started
+&lt;/h2&gt;&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;&lt;a class="link" href="https://github.com/kc9wwh/playground/blob/main/scripts/linux/fleet_run_as_user.sh" target="_blank" rel="noopener"
+&gt;Download the library&lt;/a&gt;&lt;/strong&gt; to your Fleet scripts repository&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Test locally&lt;/strong&gt; with &lt;code&gt;DEBUG=1&lt;/code&gt; enabled&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Create a Fleet script&lt;/strong&gt; that sources the library&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Deploy to a test group&lt;/strong&gt; before rolling out broadly&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;The library is modular, well-documented, and handles the edge cases that make this problem tricky. Whether you&amp;rsquo;re pushing compliance notifications, launching self-service portals, or installing user-specific software, it gives you the building blocks to execute commands in the user&amp;rsquo;s context reliably.&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;&lt;strong&gt;Questions?&lt;/strong&gt; Drop them in the comments or reach out to the Fleet community on Slack. If you&amp;rsquo;ve built something cool with this library, I&amp;rsquo;d love to hear about it.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contributing?&lt;/strong&gt; The library is designed to be extended. Have ideas for additional convenience functions? Submit a PR or share your use case.&lt;/p&gt;
+&lt;p&gt;Catch ya on the next project!&lt;/p&gt;
+&lt;p&gt;Josh 🖖&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Photo by &lt;a class="link" href="https://unsplash.com/@6heinz3r?utm_source=unsplash&amp;amp;utm_medium=referral&amp;amp;utm_content=creditCopyText" target="_blank" rel="noopener"
+&gt;Gabriel Heinzer&lt;/a&gt; on &lt;a class="link" href="https://unsplash.com" target="_blank" rel="noopener"
+&gt;Unsplash&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;</description></item></channel></rss>
