@@ -18,6 +18,8 @@ Running `notify-send` as root does nothing. The notification never appears becau
 
 After seeing customers wrestle with this problem, I built `fleet_run_as_user.sh`, a modular library that handles the complexity of executing commands in the active user's graphical session.
 
+**📁 [Get the library on GitHub →](https://github.com/kc9wwh/playground/blob/main/scripts/linux/fleet_run_as_user.sh)**
+
 ## The Problem: Root vs. User Context
 
 Fleet executes scripts with root privileges. That's great for system-level tasks like installing packages or modifying system files. But it creates a challenge when you need to:
@@ -203,7 +205,7 @@ Not all Linux systems have an active graphical user. Add fallback logic for head
 
 ## Getting Started
 
-1. **Save the library** to your Fleet scripts repository
+1. **[Download the library](https://github.com/kc9wwh/playground/blob/main/scripts/linux/fleet_run_as_user.sh)** to your Fleet scripts repository
 2. **Test locally** with `DEBUG=1` enabled
 3. **Create a Fleet script** that sources the library
 4. **Deploy to a test group** before rolling out broadly
